@@ -3,10 +3,9 @@
 
 # dependencies
 node_modules
-
+example/
 # builds
 build
-dist
 .rpt2_cache
 
 # misc
