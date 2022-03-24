@@ -88,6 +88,25 @@ function _createForOfIteratorHelperLoose(o, allowArrayLike) {
   throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
+// A type of promise-like that resolves synchronously and supports only one observer
+
+const _iteratorSymbol = /*#__PURE__*/ typeof Symbol !== "undefined" ? (Symbol.iterator || (Symbol.iterator = Symbol("Symbol.iterator"))) : "@@iterator";
+
+const _asyncIteratorSymbol = /*#__PURE__*/ typeof Symbol !== "undefined" ? (Symbol.asyncIterator || (Symbol.asyncIterator = Symbol("Symbol.asyncIterator"))) : "@@asyncIterator";
+
+// Asynchronously call a function and send errors to recovery continuation
+function _catch(body, recover) {
+	try {
+		var result = body();
+	} catch(e) {
+		return recover(e);
+	}
+	if (result && result.then) {
+		return result.then(void 0, recover);
+	}
+	return result;
+}
+
 var base64URLEncode = function base64URLEncode(str) {
   return str.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 };
@@ -115,6 +134,16 @@ var toUrlEncoded = function toUrlEncoded(obj) {
   }).join('&');
 };
 
+var UXType;
+
+(function (UXType) {
+  UXType[UXType["POPUP"] = 0] = "POPUP";
+  UXType[UXType["REDIRECTION"] = 1] = "REDIRECTION";
+})(UXType || (UXType = {}));
+
+var POPUP_WIDTH = 400;
+var POPUP_HEIGHT = 426;
+var ACCESS_TOKEN_GREASE_BOSS_EVENT = 'ACCESS_TOKEN_GREASE_BOSS_EVENT';
 var AuthService = /*#__PURE__*/function () {
   function AuthService(props) {
     var _this = this;
@@ -278,7 +307,7 @@ var AuthService = /*#__PURE__*/function () {
     }
   };
 
-  _proto.authorize = function authorize() {
+  _proto.getAuthorizeUri = function getAuthorizeUri() {
     var _this$props = this.props,
         clientId = _this$props.clientId,
         provider = _this$props.provider,
@@ -305,8 +334,61 @@ var AuthService = /*#__PURE__*/function () {
     });
 
     var url = (authorizeEndpoint || provider + "/authorize") + "?" + toUrlEncoded(query);
+    return url;
+  };
+
+  _proto.authorize = function authorize() {
+    var url = this.getAuthorizeUri();
     window.location.replace(url);
     return true;
+  };
+
+  _proto.authenticate = function authenticate() {
+    try {
+      var _this7 = this;
+
+      return Promise.resolve(_catch(function () {
+        return Promise.resolve(_this7.authenticateUsingOAuth(UXType.POPUP)).then(function (response) {
+          if (!response) {
+            throw 'No message received';
+          }
+
+          return {
+            response: response
+          };
+        });
+      }, function (e) {
+        return {
+          error: {
+            message: e
+          }
+        };
+      }));
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  };
+
+  _proto.authenticateUsingOAuth = function authenticateUsingOAuth(uxType) {
+    try {
+      var _this9 = this;
+
+      switch (uxType) {
+        case UXType.POPUP:
+          {
+            _this9.launchPopup();
+
+            return Promise.resolve(new Promise(function (resolve, reject) {
+              _this9.listenToMessageEvent(resolve, reject);
+            }));
+          }
+
+        default:
+          return Promise.reject('Wrong UXType passed');
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
   };
 
   _proto.fetchToken = function fetchToken(code, isRefresh) {
@@ -315,17 +397,17 @@ var AuthService = /*#__PURE__*/function () {
     }
 
     try {
-      var _this7 = this;
+      var _this11 = this;
 
-      var _this7$props = _this7.props,
-          clientId = _this7$props.clientId,
-          clientSecret = _this7$props.clientSecret,
-          contentType = _this7$props.contentType,
-          provider = _this7$props.provider,
-          tokenEndpoint = _this7$props.tokenEndpoint,
-          redirectUri = _this7$props.redirectUri,
-          _this7$props$autoRefr = _this7$props.autoRefresh,
-          autoRefresh = _this7$props$autoRefr === void 0 ? true : _this7$props$autoRefr;
+      var _this11$props = _this11.props,
+          clientId = _this11$props.clientId,
+          clientSecret = _this11$props.clientSecret,
+          contentType = _this11$props.contentType,
+          provider = _this11$props.provider,
+          tokenEndpoint = _this11$props.tokenEndpoint,
+          redirectUri = _this11$props.redirectUri,
+          _this11$props$autoRef = _this11$props.autoRefresh,
+          autoRefresh = _this11$props$autoRef === void 0 ? true : _this11$props$autoRef;
       var grantType = 'authorization_code';
 
       var payload = _extends({
@@ -343,7 +425,7 @@ var AuthService = /*#__PURE__*/function () {
           refresh_token: code
         });
       } else {
-        var pkce = _this7.getPkce();
+        var pkce = _this11.getPkce();
 
         var codeVerifier = pkce.codeVerifier;
         payload = _extends({}, payload, {
@@ -359,20 +441,20 @@ var AuthService = /*#__PURE__*/function () {
         method: 'POST',
         body: toUrlEncoded(payload)
       })).then(function (response) {
-        _this7.removeItem('pkce');
+        _this11.removeItem('pkce');
 
         return Promise.resolve(response.json()).then(function (json) {
           if (isRefresh && !json.refresh_token) {
             json.refresh_token = payload.refresh_token;
           }
 
-          _this7.setAuthTokens(json);
+          _this11.setAuthTokens(json);
 
           if (autoRefresh) {
-            _this7.startTimer();
+            _this11.startTimer();
           }
 
-          return _this7.getAuthTokens();
+          return _this11.getAuthTokens();
         });
       });
     } catch (e) {
@@ -381,14 +463,14 @@ var AuthService = /*#__PURE__*/function () {
   };
 
   _proto.armRefreshTimer = function armRefreshTimer(refreshToken, timeoutDuration) {
-    var _this8 = this;
+    var _this12 = this;
 
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
 
     this.timeout = window.setTimeout(function () {
-      _this8.fetchToken(refreshToken, true).then(function (_ref2) {
+      _this12.fetchToken(refreshToken, true).then(function (_ref2) {
         var newRefreshToken = _ref2.refresh_token,
             expiresAt = _ref2.expires_at;
         if (!expiresAt) return;
@@ -396,16 +478,16 @@ var AuthService = /*#__PURE__*/function () {
         var timeout = expiresAt - now;
 
         if (timeout > 0) {
-          _this8.armRefreshTimer(newRefreshToken, timeout);
+          _this12.armRefreshTimer(newRefreshToken, timeout);
         } else {
-          _this8.removeItem('auth');
+          _this12.removeItem('auth');
 
-          _this8.removeCodeFromLocation();
+          _this12.removeCodeFromLocation();
         }
       })["catch"](function (e) {
-        _this8.removeItem('auth');
+        _this12.removeItem('auth');
 
-        _this8.removeCodeFromLocation();
+        _this12.removeCodeFromLocation();
 
         console.warn({
           e: e
@@ -451,6 +533,62 @@ var AuthService = /*#__PURE__*/function () {
     }
 
     this.removeCodeFromLocation();
+  };
+
+  _proto.launchPopup = function launchPopup() {
+    var left = window.screen.width / 2 - POPUP_WIDTH / 2;
+    var top = window.screen.height / 2 - POPUP_HEIGHT / 2;
+    var win = window.open(this.getAuthorizeUri(), 'Swiggy Login', 'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' + POPUP_WIDTH + ', height=' + POPUP_HEIGHT + ', top=' + top + ', left=' + left);
+    if (win) win.opener = window;
+  };
+
+  _proto.redirectToLogin = function redirectToLogin() {
+    window.location.href = this.getAuthorizeUri();
+  };
+
+  _proto.listenToMessageEvent = function listenToMessageEvent(resolve, reject) {
+    var windowEventHandler = function windowEventHandler(event) {
+      var hash = event.data;
+
+      if (hash.type === ACCESS_TOKEN_GREASE_BOSS_EVENT) {
+        var token = hash.access_token;
+        resolve(token);
+      } else if (hash.type == 'error') {
+        console.error(hash.message);
+        reject(hash.message);
+      }
+
+      window.removeEventListener('message', windowEventHandler);
+    };
+
+    window.addEventListener('message', windowEventHandler, false);
+  };
+
+  _proto.findTokenInHash = function findTokenInHash(hash) {
+    var matchedResult = hash.match(/access_token=([^&]+)/);
+    return matchedResult && matchedResult[1];
+  };
+
+  _proto.processToken = function processToken(token, callbackFn) {
+    if (!window.opener) {
+      token && callbackFn(token);
+      return;
+    }
+
+    if (!token) {
+      window.opener.postMessage({
+        type: 'error',
+        message: 'No Access Token Found.'
+      }, window.location.origin);
+      window.close();
+      return;
+    }
+
+    window.opener.postMessage({
+      type: ACCESS_TOKEN_GREASE_BOSS_EVENT,
+      access_token: token
+    }, window.location.origin);
+    window.close();
   };
 
   return AuthService;

@@ -37,6 +37,17 @@ export interface TokenRequestBody {
     code?: string;
     codeVerifier?: string;
 }
+export declare enum UXType {
+    POPUP = 0,
+    REDIRECTION = 1
+}
+export declare type AuthError = {
+    message: string | null | unknown;
+};
+declare type PromisedResponseError<R, E = AuthError> = Promise<{
+    response?: R;
+    error?: E;
+}>;
 export declare class AuthService<TIDToken = JWTIDToken> {
     props: AuthServiceProps;
     timeout?: number;
@@ -53,9 +64,18 @@ export declare class AuthService<TIDToken = JWTIDToken> {
     isAuthenticated(): boolean;
     logout(shouldEndSession?: boolean): Promise<boolean>;
     login(): Promise<void>;
+    getAuthorizeUri(): string;
     authorize(): boolean;
+    authenticate(): Promise<PromisedResponseError<string | null>>;
+    authenticateUsingOAuth(uxType: UXType): Promise<string | void>;
     fetchToken(code: string, isRefresh?: boolean): Promise<AuthTokens>;
     armRefreshTimer(refreshToken: string, timeoutDuration: number): void;
     startTimer(): void;
     restoreUri(): void;
+    launchPopup(): void;
+    redirectToLogin(): void;
+    listenToMessageEvent(resolve: any, reject: any): void;
+    findTokenInHash(hash: string): string | null;
+    processToken(token: any, callbackFn: (token: string) => void): void;
 }
+export {};

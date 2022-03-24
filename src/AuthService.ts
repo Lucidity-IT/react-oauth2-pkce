@@ -46,6 +46,24 @@ export interface TokenRequestBody {
   codeVerifier?: string
 }
 
+export enum UXType {
+  POPUP,
+  REDIRECTION
+}
+
+export type AuthError = {
+  message: string | null | unknown
+}
+
+type PromisedResponseError<R, E = AuthError> = Promise<{
+  response?: R
+  error?: E
+}>
+
+const POPUP_WIDTH = 400
+const POPUP_HEIGHT = 426
+const ACCESS_TOKEN_GREASE_BOSS_EVENT = 'ACCESS_TOKEN_GREASE_BOSS_EVENT'
+
 export class AuthService<TIDToken = JWTIDToken> {
   props: AuthServiceProps
   timeout?: number
@@ -147,18 +165,20 @@ export class AuthService<TIDToken = JWTIDToken> {
     return window.localStorage.getItem('auth') !== null
   }
 
-  async logout(shouldEndSession: boolean = false): Promise<boolean> {
+  async logout(shouldEndSession = false): Promise<boolean> {
     this.removeItem('pkce')
     this.removeItem('auth')
     if (shouldEndSession) {
-      const { clientId, provider, logoutEndpoint, redirectUri } = this.props;
+      const { clientId, provider, logoutEndpoint, redirectUri } = this.props
       const query = {
         client_id: clientId,
         post_logout_redirect_uri: redirectUri
       }
-      const url = `${logoutEndpoint || `${provider}/logout`}?${toUrlEncoded(query)}`
+      const url = `${logoutEndpoint || `${provider}/logout`}?${toUrlEncoded(
+        query
+      )}`
       window.location.replace(url)
-      return true;
+      return true
     } else {
       window.location.reload()
       return true
@@ -169,9 +189,15 @@ export class AuthService<TIDToken = JWTIDToken> {
     this.authorize()
   }
 
-  // this will do a full page reload and to to the OAuth2 provider's login page and then redirect back to redirectUri
-  authorize(): boolean {
-    const { clientId, provider, authorizeEndpoint, redirectUri, scopes, audience } = this.props
+  getAuthorizeUri(): string {
+    const {
+      clientId,
+      provider,
+      authorizeEndpoint,
+      redirectUri,
+      scopes,
+      audience
+    } = this.props
 
     const pkce = createPKCECodes()
     window.localStorage.setItem('pkce', JSON.stringify(pkce))
@@ -189,9 +215,42 @@ export class AuthService<TIDToken = JWTIDToken> {
       codeChallengeMethod: 'S256'
     }
     // Responds with a 302 redirect
-    const url = `${authorizeEndpoint || `${provider}/authorize`}?${toUrlEncoded(query)}`
+    const url = `${authorizeEndpoint || `${provider}/authorize`}?${toUrlEncoded(
+      query
+    )}`
+    return url
+  }
+
+  // this will do a full page reload and to to the OAuth2 provider's login page and then redirect back to redirectUri
+  authorize(): boolean {
+    const url = this.getAuthorizeUri()
     window.location.replace(url)
     return true
+  }
+
+  async authenticate(): Promise<PromisedResponseError<string | null>> {
+    try {
+      const response = await this.authenticateUsingOAuth(UXType.POPUP)
+      if (!response) {
+        throw 'No message received'
+      }
+      return { response }
+    } catch (e) {
+      return { error: { message: e } }
+    }
+  }
+
+  async authenticateUsingOAuth(uxType: UXType): Promise<string | void> {
+    switch (uxType) {
+      case UXType.POPUP: {
+        this.launchPopup()
+        return new Promise<string>((resolve, reject) => {
+          this.listenToMessageEvent(resolve, reject)
+        })
+      }
+      default:
+        return Promise.reject('Wrong UXType passed')
+    }
   }
 
   // this happens after a full page reload. Read the code from localstorage
@@ -237,7 +296,7 @@ export class AuthService<TIDToken = JWTIDToken> {
       body: toUrlEncoded(payload)
     })
     this.removeItem('pkce')
-    let json = await response.json()
+    const json = await response.json()
     if (isRefresh && !json.refresh_token) {
       json.refresh_token = payload.refresh_token
     }
@@ -300,5 +359,75 @@ export class AuthService<TIDToken = JWTIDToken> {
       window.location.replace(uri)
     }
     this.removeCodeFromLocation()
+  }
+
+  launchPopup(): void {
+    const left = window.screen.width / 2 - POPUP_WIDTH / 2
+    const top = window.screen.height / 2 - POPUP_HEIGHT / 2
+    const win = window.open(
+      this.getAuthorizeUri(),
+      'Swiggy Login',
+      'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' +
+        POPUP_WIDTH +
+        ', height=' +
+        POPUP_HEIGHT +
+        ', top=' +
+        top +
+        ', left=' +
+        left
+    )
+    if (win) win.opener = window
+  }
+
+  redirectToLogin(): void {
+    window.location.href = this.getAuthorizeUri()
+  }
+
+  listenToMessageEvent(resolve: any, reject: any): void {
+    const windowEventHandler = (event: MessageEvent): void => {
+      const hash = event.data
+      // eslint-disable-next-line no-console
+      if (hash.type === ACCESS_TOKEN_GREASE_BOSS_EVENT) {
+        const token = hash.access_token
+        resolve(token)
+      } else if (hash.type == 'error') {
+        console.error(hash.message)
+        reject(hash.message)
+      }
+      window.removeEventListener('message', windowEventHandler)
+    }
+    window.addEventListener('message', windowEventHandler, false)
+  }
+
+  findTokenInHash(hash: string): string | null {
+    const matchedResult = hash.match(/access_token=([^&]+)/)
+    return matchedResult && matchedResult[1]
+  }
+
+  processToken(token: any, callbackFn: (token: string) => void) {
+    if (!window.opener) {
+      token && callbackFn(token)
+      return
+    }
+    if (!token) {
+      window.opener.postMessage(
+        {
+          type: 'error',
+          message: 'No Access Token Found.'
+        },
+        window.location.origin
+      )
+      window.close()
+      return
+    }
+
+    window.opener.postMessage(
+      {
+        type: ACCESS_TOKEN_GREASE_BOSS_EVENT,
+        access_token: token
+      },
+      window.location.origin
+    )
+    window.close()
   }
 }
