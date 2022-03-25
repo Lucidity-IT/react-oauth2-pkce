@@ -366,7 +366,7 @@ export class AuthService<TIDToken = JWTIDToken> {
     const win = window.open(
       this.getAuthorizeUri(),
       'Swiggy Login',
-      'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' +
+      'resizable=no,scrollbars=no,status=no, width=' +
         POPUP_WIDTH +
         ', height=' +
         POPUP_HEIGHT +
@@ -378,9 +378,16 @@ export class AuthService<TIDToken = JWTIDToken> {
     if (win) {
       win.opener = window
       win.onload = (): void => {
-        win?.addEventListener('popstate', this.onLocationChangeHandler, true)
-        win?.addEventListener('onbeforeunload', this.closePopupListener, true)
+        win?.addEventListener('popstate', this.onLocationChangeHandler)
+        win?.addEventListener('onbeforeunload', this.closePopupListener)
       }
+
+      const timer = setInterval(() => {
+        if (win.closed) {
+          alert('closed')
+          timer && clearInterval(timer)
+        }
+      }, 100)
     }
   }
 

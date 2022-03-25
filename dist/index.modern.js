@@ -537,15 +537,22 @@ var AuthService = /*#__PURE__*/function () {
 
     var left = window.screen.width / 2 - POPUP_WIDTH / 2;
     var top = window.screen.height / 2 - POPUP_HEIGHT / 2;
-    var win = window.open(this.getAuthorizeUri(), 'Swiggy Login', 'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' + POPUP_WIDTH + ', height=' + POPUP_HEIGHT + ', top=' + top + ', left=' + left);
+    var win = window.open(this.getAuthorizeUri(), 'Swiggy Login', 'resizable=no,scrollbars=no,status=no, width=' + POPUP_WIDTH + ', height=' + POPUP_HEIGHT + ', top=' + top + ', left=' + left);
 
     if (win) {
       win.opener = window;
 
       win.onload = function () {
-        win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler, true);
-        win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', _this12.closePopupListener, true);
+        win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler);
+        win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', _this12.closePopupListener);
       };
+
+      var timer = setInterval(function () {
+        if (win.closed) {
+          alert('closed');
+          timer && clearInterval(timer);
+        }
+      }, 100);
     }
   };
 
