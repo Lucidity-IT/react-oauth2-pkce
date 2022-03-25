@@ -544,39 +544,17 @@ var AuthService = /*#__PURE__*/function () {
 
     if (win) {
       win.opener = window;
-      win.addEventListener('load', function () {
-        win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler);
-        win === null || win === void 0 ? void 0 : win.addEventListener('beforeunload', _this12.closePopupListener);
-      });
       var timer = setInterval(function () {
-        if (win.closed) {
-          alert('closed');
+        if (win.location.href === window.location.host) {
+          _this12.onLocationChangeHandler(win);
+
           timer && clearInterval(timer);
         }
       }, 100);
     }
   };
 
-  _proto.closePopupListener = function closePopupListener() {
-    var _window, _window2;
-
-    alert(window);
-
-    if (!((_window = window) !== null && _window !== void 0 && _window.opener)) {
-      return;
-    }
-
-    var pkce = (_window2 = window) === null || _window2 === void 0 ? void 0 : _window2.opener.localStorage.getItem('pkce');
-
-    if (pkce) {
-      var _window3;
-
-      (_window3 = window) === null || _window3 === void 0 ? void 0 : _window3.opener.localStorage.removeItem('pkce');
-    }
-  };
-
-  _proto.onLocationChangeHandler = function onLocationChangeHandler(event) {
-    console.log('location change event: ', event);
+  _proto.onLocationChangeHandler = function onLocationChangeHandler(window) {
     var code = this.getCodeFromLocation(window.location);
 
     if (!window.opener) {
