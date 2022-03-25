@@ -543,18 +543,25 @@ var AuthService = /*#__PURE__*/function () {
     if (win) {
       win.opener = window;
       win === null || win === void 0 ? void 0 : win.addEventListener('popstate', this.onLocationChangeHandler, true);
+      win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', this.closePopupListener, true);
+    }
+  };
 
-      win.onbeforeunload = function () {
-        if (!(win !== null && win !== void 0 && win.opener)) {
-          return;
-        }
+  _proto.closePopupListener = function closePopupListener() {
+    var _window, _window2;
 
-        var pkce = window.localStorage.getItem('pkce');
+    alert(window);
 
-        if (pkce) {
-          window.localStorage.removeItem('pkce');
-        }
-      };
+    if (!((_window = window) !== null && _window !== void 0 && _window.opener)) {
+      return;
+    }
+
+    var pkce = (_window2 = window) === null || _window2 === void 0 ? void 0 : _window2.opener.localStorage.getItem('pkce');
+
+    if (pkce) {
+      var _window3;
+
+      (_window3 = window) === null || _window3 === void 0 ? void 0 : _window3.opener.localStorage.removeItem('pkce');
     }
   };
 

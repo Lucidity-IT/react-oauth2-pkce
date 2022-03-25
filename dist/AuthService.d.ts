@@ -73,6 +73,7 @@ export declare class AuthService<TIDToken = JWTIDToken> {
     startTimer(): void;
     restoreUri(): void;
     launchPopup(): void;
+    closePopupListener(): void;
     onLocationChangeHandler(event: any): void;
     listenToMessageEvent(resolve: any, reject: any): void;
 }
