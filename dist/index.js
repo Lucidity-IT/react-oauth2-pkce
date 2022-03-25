@@ -536,14 +536,19 @@ var AuthService = /*#__PURE__*/function () {
   };
 
   _proto.launchPopup = function launchPopup() {
+    var _this12 = this;
+
     var left = window.screen.width / 2 - POPUP_WIDTH / 2;
     var top = window.screen.height / 2 - POPUP_HEIGHT / 2;
     var win = window.open(this.getAuthorizeUri(), 'Swiggy Login', 'menubar=no,location=no,resizable=no,scrollbars=no,status=no, width=' + POPUP_WIDTH + ', height=' + POPUP_HEIGHT + ', top=' + top + ', left=' + left);
 
     if (win) {
       win.opener = window;
-      win === null || win === void 0 ? void 0 : win.addEventListener('popstate', this.onLocationChangeHandler, true);
-      win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', this.closePopupListener, true);
+
+      win.onload = function () {
+        win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler, true);
+        win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', _this12.closePopupListener, true);
+      };
     }
   };
 
