@@ -545,7 +545,7 @@ var AuthService = /*#__PURE__*/function () {
     if (win) {
       win.opener = window;
       var timer = setInterval(function () {
-        if (win.location.href === window.location.host) {
+        if (win.location.host === window.location.host) {
           _this12.onLocationChangeHandler(win);
 
           timer && clearInterval(timer);
