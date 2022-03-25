@@ -544,12 +544,10 @@ var AuthService = /*#__PURE__*/function () {
 
     if (win) {
       win.opener = window;
-
-      win.onload = function () {
+      win.addEventListener('load', function () {
         win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler);
         win === null || win === void 0 ? void 0 : win.addEventListener('beforeunload', _this12.closePopupListener);
-      };
-
+      });
       var timer = setInterval(function () {
         if (win.closed) {
           alert('closed');
