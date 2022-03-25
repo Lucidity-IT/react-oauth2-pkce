@@ -70,21 +70,6 @@ export class AuthService<TIDToken = JWTIDToken> {
 
   constructor(props: AuthServiceProps) {
     this.props = props
-    const code = this.getCodeFromLocation(window.location)
-    if (code !== null) {
-      this.fetchToken(code)
-        .then(() => {
-          this.restoreUri()
-        })
-        .catch((e) => {
-          this.removeItem('pkce')
-          this.removeItem('auth')
-          this.removeCodeFromLocation()
-          console.warn({ e })
-        })
-    } else if (this.props.autoRefresh) {
-      this.startTimer()
-    }
   }
 
   getUser(): {} {
@@ -234,6 +219,20 @@ export class AuthService<TIDToken = JWTIDToken> {
       if (!response) {
         throw 'No message received'
       }
+      if (response !== null) {
+        this.fetchToken(response)
+          .then(() => {
+            this.restoreUri()
+          })
+          .catch((e) => {
+            this.removeItem('pkce')
+            this.removeItem('auth')
+            this.removeCodeFromLocation()
+            console.warn({ e })
+          })
+      } else if (this.props.autoRefresh) {
+        this.startTimer()
+      }
       return { response }
     } catch (e) {
       return { error: { message: e } }
@@ -376,44 +375,31 @@ export class AuthService<TIDToken = JWTIDToken> {
         ', left=' +
         left
     )
-    if (win) win.opener = window
-  }
-
-  redirectToLogin(): void {
-    window.location.href = this.getAuthorizeUri()
-  }
-
-  listenToMessageEvent(resolve: any, reject: any): void {
-    const windowEventHandler = (event: MessageEvent): void => {
-      const hash = event.data
-      // eslint-disable-next-line no-console
-      if (hash.type === ACCESS_TOKEN_GREASE_BOSS_EVENT) {
-        const token = hash.access_token
-        resolve(token)
-      } else if (hash.type == 'error') {
-        console.error(hash.message)
-        reject(hash.message)
+    if (win) {
+      win.opener = window
+      win?.addEventListener('popstate', this.onLocationChangeHandler, true)
+      win.onbeforeunload = (): void => {
+        if (!win?.opener) {
+          return
+        }
+        const pkce = window.localStorage.getItem('pkce')
+        if (pkce) {
+          window.localStorage.removeItem('pkce')
+        }
       }
-      window.removeEventListener('message', windowEventHandler)
     }
-    window.addEventListener('message', windowEventHandler, false)
   }
 
-  findTokenInHash(hash: string): string | null {
-    const matchedResult = hash.match(/access_token=([^&]+)/)
-    return matchedResult && matchedResult[1]
-  }
-
-  processToken(token: any, callbackFn: (token: string) => void) {
+  onLocationChangeHandler(event: any): void {
+    const code = this.getCodeFromLocation(window.location)
     if (!window.opener) {
-      token && callbackFn(token)
       return
     }
-    if (!token) {
+    if (!code) {
       window.opener.postMessage(
         {
           type: 'error',
-          message: 'No Access Token Found.'
+          message: 'No Authorization Code Found.'
         },
         window.location.origin
       )
@@ -424,10 +410,26 @@ export class AuthService<TIDToken = JWTIDToken> {
     window.opener.postMessage(
       {
         type: ACCESS_TOKEN_GREASE_BOSS_EVENT,
-        access_token: token
+        authorization_code: code
       },
       window.location.origin
     )
     window.close()
+  }
+
+  listenToMessageEvent(resolve: any, reject: any): void {
+    const windowEventHandler = (event: MessageEvent): void => {
+      const hash = event.data
+      // eslint-disable-next-line no-console
+      if (hash.type === ACCESS_TOKEN_GREASE_BOSS_EVENT) {
+        const code = hash.authorization_code
+        resolve(code)
+      } else if (hash.type == 'error') {
+        console.error(hash.message)
+        reject(hash.message)
+      }
+      window.removeEventListener('message', windowEventHandler)
+    }
+    window.addEventListener('message', windowEventHandler, false)
   }
 }
