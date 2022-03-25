@@ -547,7 +547,7 @@ var AuthService = /*#__PURE__*/function () {
 
       win.onload = function () {
         win === null || win === void 0 ? void 0 : win.addEventListener('popstate', _this12.onLocationChangeHandler);
-        win === null || win === void 0 ? void 0 : win.addEventListener('onbeforeunload', _this12.closePopupListener);
+        win === null || win === void 0 ? void 0 : win.addEventListener('beforeunload', _this12.closePopupListener);
       };
 
       var timer = setInterval(function () {

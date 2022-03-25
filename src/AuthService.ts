@@ -379,7 +379,7 @@ export class AuthService<TIDToken = JWTIDToken> {
       win.opener = window
       win.onload = (): void => {
         win?.addEventListener('popstate', this.onLocationChangeHandler)
-        win?.addEventListener('onbeforeunload', this.closePopupListener)
+        win?.addEventListener('beforeunload', this.closePopupListener)
       }
 
       const timer = setInterval(() => {
