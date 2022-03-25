@@ -377,33 +377,16 @@ export class AuthService<TIDToken = JWTIDToken> {
     )
     if (win) {
       win.opener = window
-      win.addEventListener('load', () => {
-        win?.addEventListener('popstate', this.onLocationChangeHandler)
-        win?.addEventListener('beforeunload', this.closePopupListener)
-      })
-
       const timer = setInterval(() => {
-        if (win.closed) {
-          alert('closed')
+        if (win.location.href === window.location.host) {
+          this.onLocationChangeHandler(win)
           timer && clearInterval(timer)
         }
       }, 100)
     }
   }
 
-  closePopupListener(): void {
-    alert(window)
-    if (!window?.opener) {
-      return
-    }
-    const pkce = window?.opener.localStorage.getItem('pkce')
-    if (pkce) {
-      window?.opener.localStorage.removeItem('pkce')
-    }
-  }
-
-  onLocationChangeHandler(event: any): void {
-    console.log('location change event: ', event)
+  onLocationChangeHandler(window: Window): void {
     const code = this.getCodeFromLocation(window.location)
     if (!window.opener) {
       return
