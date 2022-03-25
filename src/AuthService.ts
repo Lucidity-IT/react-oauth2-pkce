@@ -378,7 +378,9 @@ export class AuthService<TIDToken = JWTIDToken> {
     if (win) {
       win.opener = window
       const timer = setInterval(() => {
-        if (win.location.host === window.location.host) {
+        const a = win.document.createElement('a')
+        a.href = win.document.URL
+        if (a.hostname === window.location.hostname) {
           this.onLocationChangeHandler(win)
           timer && clearInterval(timer)
         }
