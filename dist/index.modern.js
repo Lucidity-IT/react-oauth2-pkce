@@ -519,17 +519,7 @@ var AuthService = /*#__PURE__*/function () {
   };
 
   _proto.restoreUri = function restoreUri() {
-    var uri = window.localStorage.getItem('preAuthUri');
-    window.localStorage.removeItem('preAuthUri');
-    console.log({
-      uri: uri
-    });
-
-    if (uri !== null) {
-      window.location.replace(uri);
-    }
-
-    this.removeCodeFromLocation();
+    window.location.replace('/');
   };
 
   _proto.launchPopup = function launchPopup() {

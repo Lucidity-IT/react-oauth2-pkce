@@ -351,13 +351,7 @@ export class AuthService<TIDToken = JWTIDToken> {
   }
 
   restoreUri(): void {
-    const uri = window.localStorage.getItem('preAuthUri')
-    window.localStorage.removeItem('preAuthUri')
-    console.log({ uri })
-    if (uri !== null) {
-      window.location.replace(uri)
-    }
-    this.removeCodeFromLocation()
+    window.location.replace('/')
   }
 
   launchPopup(): void {
