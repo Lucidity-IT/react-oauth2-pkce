@@ -391,6 +391,7 @@ export class AuthService<TIDToken = JWTIDToken> {
   }
 
   onLocationChangeHandler(event: any): void {
+    console.log('location change event: ', event)
     const code = this.getCodeFromLocation(window.location)
     if (!window.opener) {
       return
