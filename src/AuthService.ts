@@ -372,11 +372,15 @@ export class AuthService<TIDToken = JWTIDToken> {
     if (win) {
       win.opener = window
       const timer = setInterval(() => {
-        const a = win.document.createElement('a')
-        a.href = win.document.URL
-        if (a.hostname === window.location.hostname) {
-          this.onLocationChangeHandler(win)
-          timer && clearInterval(timer)
+        try {
+          const a = win.document.createElement('a')
+          a.href = win.document.URL
+          if (a.hostname === window.location.hostname) {
+            this.onLocationChangeHandler(win)
+            timer && clearInterval(timer)
+          }
+        } catch (e) {
+          console.log('timer host name checking error: ', e)
         }
       }, 100)
     }
