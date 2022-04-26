@@ -7,7 +7,8 @@ import jwtDecode from 'jwt-decode'
 export interface AuthServiceProps {
   clientId: string
   clientSecret?: string
-  contentType?: string
+  contentType?: string,
+  id_token_hint: string,
   location: Location
   provider: string
   authorizeEndpoint?: string
@@ -154,9 +155,9 @@ export class AuthService<TIDToken = JWTIDToken> {
     this.removeItem('pkce')
     this.removeItem('auth')
     if (shouldEndSession) {
-      const { clientId, provider, logoutEndpoint, redirectUri } = this.props
+      const { id_token_hint, provider, logoutEndpoint, redirectUri } = this.props
       const query = {
-        id_token_hint: clientId,
+        id_token_hint: id_token_hint,
         post_logout_redirect_uri: redirectUri
       }
       const url = `${logoutEndpoint || `${provider}/logout`}?${toUrlEncoded(

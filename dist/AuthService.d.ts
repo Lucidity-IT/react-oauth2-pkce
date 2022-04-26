@@ -3,6 +3,7 @@ export interface AuthServiceProps {
     clientId: string;
     clientSecret?: string;
     contentType?: string;
+    id_token_hint: string;
     location: Location;
     provider: string;
     authorizeEndpoint?: string;

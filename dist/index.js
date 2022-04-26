@@ -256,12 +256,12 @@ var AuthService = /*#__PURE__*/function () {
 
       if (shouldEndSession) {
         var _this2$props = _this2.props,
-            clientId = _this2$props.clientId,
+            id_token_hint = _this2$props.id_token_hint,
             provider = _this2$props.provider,
             logoutEndpoint = _this2$props.logoutEndpoint,
             redirectUri = _this2$props.redirectUri;
         var query = {
-          id_token_hint: clientId,
+          id_token_hint: id_token_hint,
           post_logout_redirect_uri: redirectUri
         };
         var url = (logoutEndpoint || provider + "/logout") + "?" + toUrlEncoded(query);
