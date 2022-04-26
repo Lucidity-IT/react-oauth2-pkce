@@ -156,7 +156,7 @@ export class AuthService<TIDToken = JWTIDToken> {
     if (shouldEndSession) {
       const { clientId, provider, logoutEndpoint, redirectUri } = this.props
       const query = {
-        client_id: clientId,
+        id_token_hint: clientId,
         post_logout_redirect_uri: redirectUri
       }
       const url = `${logoutEndpoint || `${provider}/logout`}?${toUrlEncoded(
@@ -361,13 +361,13 @@ export class AuthService<TIDToken = JWTIDToken> {
       this.getAuthorizeUri(),
       'Swiggy Login',
       'resizable=no,scrollbars=no,status=no, width=' +
-        POPUP_WIDTH +
-        ', height=' +
-        POPUP_HEIGHT +
-        ', top=' +
-        top +
-        ', left=' +
-        left
+      POPUP_WIDTH +
+      ', height=' +
+      POPUP_HEIGHT +
+      ', top=' +
+      top +
+      ', left=' +
+      left
     )
     if (win) {
       win.opener = window

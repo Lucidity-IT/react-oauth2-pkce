@@ -70,14 +70,11 @@ function _arrayLikeToArray(arr, len) {
   return arr2;
 }
 
-function _createForOfIteratorHelperLoose(o, allowArrayLike) {
-  var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
-  if (it) return (it = it.call(o)).next.bind(it);
+function _createForOfIteratorHelperLoose(o) {
+  var i = 0;
 
-  if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
-    if (it) o = it;
-    var i = 0;
-    return function () {
+  if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+    if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) return function () {
       if (i >= o.length) return {
         done: true
       };
@@ -86,9 +83,11 @@ function _createForOfIteratorHelperLoose(o, allowArrayLike) {
         value: o[i++]
       };
     };
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
-  throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  i = o[Symbol.iterator]();
+  return i.next.bind(i);
 }
 
 // A type of promise-like that resolves synchronously and supports only one observer
@@ -262,7 +261,7 @@ var AuthService = /*#__PURE__*/function () {
             logoutEndpoint = _this2$props.logoutEndpoint,
             redirectUri = _this2$props.redirectUri;
         var query = {
-          client_id: clientId,
+          id_token_hint: clientId,
           post_logout_redirect_uri: redirectUri
         };
         var url = (logoutEndpoint || provider + "/logout") + "?" + toUrlEncoded(query);
@@ -303,14 +302,14 @@ var AuthService = /*#__PURE__*/function () {
     window.localStorage.removeItem('auth');
     var codeChallenge = pkce.codeChallenge;
 
-    var query = _extends({
+    var query = _extends(_extends({
       clientId: clientId,
       scope: scopes.join(' '),
       responseType: 'code',
       redirectUri: redirectUri
     }, audience && {
       audience: audience
-    }, {
+    }), {}, {
       codeChallenge: codeChallenge,
       codeChallengeMethod: 'S256'
     });
@@ -410,17 +409,17 @@ var AuthService = /*#__PURE__*/function () {
           autoRefresh = _this10$props$autoRef === void 0 ? true : _this10$props$autoRef;
       var grantType = 'authorization_code';
 
-      var payload = _extends({
+      var payload = _extends(_extends({
         clientId: clientId
       }, clientSecret ? {
         clientSecret: clientSecret
-      } : {}, {
+      } : {}), {}, {
         redirectUri: redirectUri,
         grantType: grantType
       });
 
       if (isRefresh) {
-        payload = _extends({}, payload, {
+        payload = _extends(_extends({}, payload), {}, {
           grantType: 'refresh_token',
           refresh_token: code
         });
@@ -428,7 +427,7 @@ var AuthService = /*#__PURE__*/function () {
         var pkce = _this10.getPkce();
 
         var codeVerifier = pkce.codeVerifier;
-        payload = _extends({}, payload, {
+        payload = _extends(_extends({}, payload), {}, {
           code: code,
           codeVerifier: codeVerifier
         });
