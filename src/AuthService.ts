@@ -155,12 +155,12 @@ export class AuthService<TIDToken = JWTIDToken> {
     this.removeItem('pkce')
     this.removeItem('auth')
     if (shouldEndSession) {
-      const { id_token_hint, provider, logoutEndpoint, redirectUri } = this.props
+      const { id_token_hint, logoutEndpoint, redirectUri } = this.props
       const query = {
         id_token_hint: id_token_hint,
         post_logout_redirect_uri: redirectUri
       }
-      const url = `${logoutEndpoint || `${provider}/logout`}?${toUrlEncoded(
+      const url = `${logoutEndpoint}?${toUrlEncoded(
         query
       )}`
       window.location.replace(url)
