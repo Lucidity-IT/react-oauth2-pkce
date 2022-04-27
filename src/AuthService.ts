@@ -152,10 +152,13 @@ export class AuthService<TIDToken = JWTIDToken> {
   }
 
   async logout(shouldEndSession = false): Promise<boolean> {
-    this.removeItem('pkce')
-    this.removeItem('auth')
+
+    let token = JSON.parse(localStorage.getItem('auth') || '{}')
+
     if (shouldEndSession) {
-      const { id_token_hint, logoutEndpoint, redirectUri } = this.props
+
+      const { logoutEndpoint, redirectUri } = this.props
+      let id_token_hint = token?.access_token
       const query = {
         id_token_hint: id_token_hint,
         post_logout_redirect_uri: redirectUri
@@ -163,9 +166,13 @@ export class AuthService<TIDToken = JWTIDToken> {
       const url = `${logoutEndpoint}?${toUrlEncoded(
         query
       )}`
+      this.removeItem('pkce')
+      this.removeItem('auth')
       window.location.replace(url)
       return true
     } else {
+      this.removeItem('pkce')
+      this.removeItem('auth')
       window.location.reload()
       return true
     }

@@ -247,23 +247,30 @@ var AuthService = /*#__PURE__*/function () {
     try {
       var _this2 = this;
 
-      _this2.removeItem('pkce');
-
-      _this2.removeItem('auth');
+      var token = JSON.parse(localStorage.getItem('auth') || '{}');
 
       if (shouldEndSession) {
         var _this2$props = _this2.props,
-            id_token_hint = _this2$props.id_token_hint,
             logoutEndpoint = _this2$props.logoutEndpoint,
             redirectUri = _this2$props.redirectUri;
+        var id_token_hint = token === null || token === void 0 ? void 0 : token.access_token;
         var query = {
           id_token_hint: id_token_hint,
           post_logout_redirect_uri: redirectUri
         };
         var url = logoutEndpoint + "?" + toUrlEncoded(query);
+
+        _this2.removeItem('pkce');
+
+        _this2.removeItem('auth');
+
         window.location.replace(url);
         return Promise.resolve(true);
       } else {
+        _this2.removeItem('pkce');
+
+        _this2.removeItem('auth');
+
         window.location.reload();
         return Promise.resolve(true);
       }
