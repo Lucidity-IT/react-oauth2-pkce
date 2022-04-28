@@ -253,7 +253,7 @@ var AuthService = /*#__PURE__*/function () {
         var _this2$props = _this2.props,
             logoutEndpoint = _this2$props.logoutEndpoint,
             redirectUri = _this2$props.redirectUri;
-        var id_token_hint = token === null || token === void 0 ? void 0 : token.access_token;
+        var id_token_hint = token === null || token === void 0 ? void 0 : token.id_token;
         var query = {
           id_token_hint: id_token_hint,
           post_logout_redirect_uri: redirectUri

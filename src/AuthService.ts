@@ -158,7 +158,7 @@ export class AuthService<TIDToken = JWTIDToken> {
     if (shouldEndSession) {
 
       const { logoutEndpoint, redirectUri } = this.props
-      let id_token_hint = token?.access_token
+      let id_token_hint = token?.id_token
       const query = {
         id_token_hint: id_token_hint,
         post_logout_redirect_uri: redirectUri
